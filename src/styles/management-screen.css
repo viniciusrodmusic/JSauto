@@ -312,6 +312,7 @@ nav ul li a:hover {
     from {
         background-color: rgba(0, 0, 0, 0);
     }
+
     to {
         background-color: rgba(0, 0, 0, 0.5);
     }
@@ -321,6 +322,7 @@ nav ul li a:hover {
     from {
         background-color: rgba(0, 0, 0, 0.5);
     }
+
     to {
         background-color: rgba(0, 0, 0, 0);
     }
@@ -338,7 +340,7 @@ nav ul li a:hover {
     background-color: var(--color-secondary);
     padding: 30px;
     border-radius: 12px;
-    width: 400px;
+    width: 25rem;
     max-width: 90%;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     position: relative;
@@ -352,6 +354,7 @@ nav ul li a:hover {
         opacity: 0;
         transform: translateY(40px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -363,6 +366,7 @@ nav ul li a:hover {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+
     to {
         opacity: 0;
         transform: translateY(40px) scale(0.95);
@@ -408,6 +412,7 @@ nav ul li a:hover {
     padding: 12px;
     background-color: var(--color-primary);
     color: var(--color-secondary);
+    transition: 0.2s all;
     border: none;
     border-radius: 6px;
     font-size: 1.1rem;
@@ -417,5 +422,48 @@ nav ul li a:hover {
 }
 
 .modal-content form button:hover {
-    opacity: 0.9;
+    opacity: 0.8;
+}
+
+/* ========== Modal Largo (Funcionário) ========== */
+.modal-content--large {
+    width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) var(--color-secondary);
+}
+
+.modal-content--large::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content--large::-webkit-scrollbar-track {
+    background: var(--color-secondary);
+    border-radius: 10px;
+}
+
+.modal-content--large::-webkit-scrollbar-thumb {
+    background-color: var(--color-primary);
+    border-radius: 10px;
+}
+
+/* Grade de 2 colunas para os campos do form */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Rótulo separador de seção dentro do form */
+.form-section-label {
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+    padding-bottom: 4px;
+    margin-top: 6px;
+    opacity: 0.8;
 }

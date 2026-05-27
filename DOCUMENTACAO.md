@@ -190,7 +190,7 @@ O projeto **não possui autenticação implementada**. Qualquer pessoa pode usar
 
 #### 1. **No Backend NestJS:**
 
-```typescript
+```typescript   
 // Instalar: npm install @nestjs/jwt @nestjs/passport passport passport-jwt
 
 // auth.module.ts

@@ -71,10 +71,40 @@ document.addEventListener('submit', async function(event) {
 
         // Utilização de FormData para varrer todos os campos <input name="..."> de maneira inteligente
         const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
+
+        /**
+         * Converte campos com notação de colchetes (ex: address[street])
+         * em objetos aninhados para compatibilidade com o DTO do NestJS.
+         */
+        function buildNestedObject(formData) {
+            const result = {};
+            for (const [key, value] of formData.entries()) {
+                const match = key.match(/^([^\[]+)\[([^\]]+)\]$/);
+                if (match) {
+                    const [, parent, child] = match;
+                    if (!result[parent]) result[parent] = {};
+                    result[parent][child] = value;
+                } else {
+                    result[key] = value;
+                }
+            }
+            return result;
+        }
+
+        const data = buildNestedObject(formData);
 
         // Processamentos opcionais: Converter IDs ou Preços para numéricos se o NestJS exigir rigidez
-        // (Isso também pode ser deixado para os Data Transfer Objects (DTO) usando o ValidationPipe e class-transformer no lado do Nest)
+        if (data.year) {
+            data.year = parseInt(data.year, 10);
+        }
+        if (data.price) {
+            data.price = parseFloat(data.price);
+        }
+        if (data.stock) {
+            if (data.stock.quantity !== undefined) data.stock.quantity = parseInt(data.stock.quantity, 10);
+            if (data.stock.minStock !== undefined) data.stock.minStock = parseInt(data.stock.minStock, 10);
+            if (data.stock.maxStock !== undefined) data.stock.maxStock = parseInt(data.stock.maxStock, 10);
+        }
 
         const submitBtn = form.querySelector('button[type="submit"]');
 

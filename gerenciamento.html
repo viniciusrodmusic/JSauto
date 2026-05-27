@@ -84,60 +84,109 @@
 
             <!-- Modais de Cadastro -->
             <div id="modal-funcionario" class="modal-form">
-                <div class="modal-content">
+                <div class="modal-content modal-content--large">
                     <span class="close-btn" data-modal-close>&times;</span>
                     <h2>Cadastro de Funcionário</h2>
                     <form id="form-funcionario" data-entity="funcionario">
-                        <input type="text" name="Nome" placeholder="Nome" required>
-                        <input type="text" name="CPF" placeholder="CPF" required>
-                        <input type="text" name="Telefone" placeholder="Telefone">
-                        <input type="text" name="Cargo" placeholder="Cargo">
-                        <input type="number" name="Salario" placeholder="Salário" step="0.01">
-                        <button type="submit">Cadastrar</button>
+
+                        <div class="form-section-label">Dados Pessoais</div>
+                        <div class="form-row">
+                            <input type="text" name="name" placeholder="Nome" required>
+                            <input type="text" name="lastname" placeholder="Sobrenome" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="email" name="email" placeholder="E-mail" required>
+                            <input type="text" name="phone" placeholder="Telefone">
+                        </div>
+                        <div class="form-row">
+                            <input type="text" name="cpf" placeholder="CPF" required>
+                            <input type="password" name="password" placeholder="Senha" required>
+                        </div>
+
+                        <div class="form-section-label">Endereço</div>
+                        <div class="form-row">
+                            <input type="text" name="address[street]" placeholder="Rua / Logradouro" required>
+                            <input type="text" name="address[number]" placeholder="Número" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" name="address[complement]" placeholder="Complemento">
+                            <input type="text" name="address[postalCode]" placeholder="CEP" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" name="address[city]" placeholder="Cidade" required>
+                            <input type="text" name="address[state]" placeholder="Estado (UF)" required maxlength="2">
+                        </div>
+
+                        <button type="submit">Cadastrar Funcionário</button>
                     </form>
                 </div>
             </div>
 
             <div id="modal-cliente" class="modal-form">
-                <div class="modal-content">
+                <div class="modal-content modal-content--large">
                     <span class="close-btn" data-modal-close>&times;</span>
                     <h2>Cadastro de Cliente</h2>
                     <form id="form-cliente" data-entity="cliente">
-                        <input type="text" name="Nome" placeholder="Nome" required>
-                        <input type="text" name="CPF_CNPJ" placeholder="CPF/CNPJ" required>
-                        <input type="text" name="Telefone" placeholder="Telefone">
-                        <input type="email" name="Email" placeholder="Email">
-                        <input type="text" name="Endereco" placeholder="Endereço">
-                        <button type="submit">Cadastrar</button>
+                        <div class="form-row">
+                            <input type="text" name="name" placeholder="Nome" required>
+                            <input type="text" name="lastName" placeholder="Sobrenome" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="email" name="email" placeholder="E-mail" required>
+                            <input type="text" name="phone" placeholder="Telefone">
+                        </div>
+                        <input type="text" name="cpfOrCnpj" placeholder="CPF ou CNPJ" required>
+                        <button type="submit">Cadastrar Cliente</button>
                     </form>
                 </div>
             </div>
 
             <div id="modal-produto" class="modal-form">
-                <div class="modal-content">
+                <div class="modal-content modal-content--large">
                     <span class="close-btn" data-modal-close>&times;</span>
                     <h2>Cadastro de Produto</h2>
                     <form id="form-produto" data-entity="produto">
-                        <input type="text" name="Nome" placeholder="Nome" required>
-                        <input type="text" name="Descricao" placeholder="Descrição">
-                        <input type="number" name="Preco" placeholder="Preço" step="0.01" required>
-                        <input type="number" name="Estoque" placeholder="Estoque" required>
-                        <button type="submit">Cadastrar</button>
+                        
+                        <div class="form-section-label">Dados do Produto</div>
+                        <div class="form-row">
+                            <input type="text" name="sku" placeholder="SKU (Código único)" required>
+                            <input type="text" name="name" placeholder="Nome do Produto" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" name="description" placeholder="Descrição">
+                            <input type="number" name="price" placeholder="Preço (Ex: 99.90)" step="0.01" required>
+                        </div>
+
+                        <div class="form-section-label">Estoque</div>
+                        <div class="form-row">
+                            <input type="number" name="stock[quantity]" placeholder="Quantidade Atual" required>
+                            <input type="number" name="stock[minStock]" placeholder="Estoque Mínimo" required>
+                        </div>
+                        <input type="number" name="stock[maxStock]" placeholder="Estoque Máximo" required>
+
+                        <button type="submit">Cadastrar Produto</button>
                     </form>
                 </div>
             </div>
 
             <div id="modal-veiculo" class="modal-form">
-                <div class="modal-content">
+                <div class="modal-content modal-content--large">
                     <span class="close-btn" data-modal-close>&times;</span>
                     <h2>Cadastro de Veículo</h2>
                     <form id="form-veiculo" data-entity="veiculo">
-                        <input type="text" name="Placa" placeholder="Placa" required>
-                        <input type="text" name="Modelo" placeholder="Modelo">
-                        <input type="text" name="Marca" placeholder="Marca">
-                        <input type="number" name="Ano" placeholder="Ano">
-                        <input type="number" name="id_cliente" placeholder="ID do Cliente">
-                        <button type="submit">Cadastrar</button>
+                        <div class="form-row">
+                            <input type="text" name="brand" placeholder="Marca (Ex: Fiat)" required>
+                            <input type="text" name="model" placeholder="Modelo (Ex: Uno)" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="number" name="year" placeholder="Ano (Ex: 2027)" required>
+                            <input type="text" name="plate" placeholder="Placa (Ex: XFZ3018)" required>
+                        </div>
+                        <div class="form-row">
+                            <input type="text" name="vin" placeholder="Chassi / VIN" required>
+                            <input type="text" name="customerId" placeholder="ID do Cliente (UUID)" required>
+                        </div>
+                        <button type="submit">Cadastrar Veículo</button>
                     </form>
                 </div>
             </div>
