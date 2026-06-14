@@ -19,27 +19,42 @@ async function apiRequest(endpoint, options = {}) {
         config.body = JSON.stringify(body);
     }
 
+    console.log(`[API] ${method} ${endpoint}`, { body: config.body });
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+    console.log(`[API] Resposta: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const message = Array.isArray(errorData.message)
             ? errorData.message.join(', ')
             : (errorData.message || 'Ocorreu um erro ao comunicar-se com a API do servidor.');
+        
+        console.error(`[API] Erro HTTP ${response.status}:`, errorData);
+        
         const error = new Error(message);
         error.status = response.status;
         throw error;
     }
 
     const text = await response.text();
-    return text ? JSON.parse(text) : null;
+    const result = text ? JSON.parse(text) : null;
+    console.log(`[API] Dados recebidos:`, result);
+    
+    return result;
 }
 
 async function login(email, password) {
-    return apiRequest('/auth/login', {
+    console.log('[Auth] Iniciando login para:', email);
+    const result = await apiRequest('/auth/login', {
         method: 'POST',
         body: { email, password },
     });
+    console.log('[Auth] Login bem-sucedido. Aguardando propagação do cookie...');
+    // Pequeno delay para garantir que o cookie HTTPOnly foi armazenado
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return result;
 }
 
 async function logout() {
@@ -54,6 +69,30 @@ async function logout() {
 
 async function fetchProfile() {
     return apiRequest('/auth/profile');
+}
+
+/**
+ * Busca o perfil com retry automático em caso de falha
+ */
+async function fetchProfileWithRetry(maxRetries = 3, delayMs = 1000) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`[Auth] Tentativa ${attempt}/${maxRetries} de buscar perfil...`);
+            return await fetchProfile();
+        } catch (error) {
+            lastError = error;
+            console.warn(`[Auth] Tentativa ${attempt} falhou:`, error.message);
+            
+            if (attempt < maxRetries) {
+                console.log(`[Auth] Aguardando ${delayMs}ms antes de tentar novamente...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+    }
+    
+    throw lastError;
 }
 
 async function refreshSession() {
@@ -95,20 +134,38 @@ function hideLoadingScreen() {
 async function initManagementPage() {
     if (!document.getElementById('logout-btn')) return;
 
+    console.log('[Auth] Inicializando página de gerenciamento...');
+
     try {
-        const profile = await fetchProfile();
+        console.log('[Auth] Buscando perfil do usuário com retry...');
+        const profile = await fetchProfileWithRetry(3, 1500);
+        
+        console.log('[Auth] Perfil recebido:', profile);
+        
         const userLabel = document.getElementById('user-label');
         if (userLabel && profile) {
             const name = [profile.name, profile.lastname].filter(Boolean).join(' ');
             userLabel.textContent = name || profile.email || '';
+            console.log('[Auth] Nome do usuário definido:', name);
         }
     } catch (error) {
-        alert('Sessão expirada ou não autenticada. Faça login novamente.');
-        window.location.href = 'index.html';
+        console.error('[Auth] Erro ao buscar perfil após retries:', error);
+        console.error('[Auth] Status do erro:', error.status);
+        console.error('[Auth] Mensagem do erro:', error.message);
+        
+        const errorMsg = error.status === 401 || error.status === 403
+            ? 'Sua sessão expirou. Por favor, faça login novamente.'
+            : `Erro ao carregar dados: ${error.message}`;
+        
+        showErrorToast(errorMsg);
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 2000);
         return;
     }
 
     hideLoadingScreen();
+    console.log('[Auth] Iniciando intervalo de renovação de autenticação...');
     startAuthRefreshInterval();
 }
 
@@ -116,8 +173,10 @@ function handleUnauthorized(error) {
     const isAuthError = error.status === 401 || error.status === 403;
 
     if (isAuthError) {
-        alert('Sessão inválida. Faça login novamente.');
-        window.location.href = 'index.html';
+        showErrorToast('Sessão inválida. Faça login novamente.');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 2000);
         return true;
     }
 
@@ -212,7 +271,7 @@ document.addEventListener('submit', async function (event) {
         const submitBtn = form.querySelector('button[type="submit"]');
 
         if (!email || !password) {
-            alert('Preencha e-mail e senha.');
+            showWarningToast('Preencha e-mail e senha.');
             return;
         }
 
@@ -224,9 +283,14 @@ document.addEventListener('submit', async function (event) {
             }
 
             await login(email, password);
-            window.location.href = 'gerenciamento.html';
+            showSuccessToast('Login realizado com sucesso!');
+            
+            // Aguardar um pouco antes de redirecionar para o usuário ver o toast
+            setTimeout(() => {
+                window.location.href = 'gerenciamento.html';
+            }, 1500);
         } catch (error) {
-            alert(`Falha no login.\n${error.message}`);
+            showErrorToast(`Falha no login: ${error.message}`);
         } finally {
             if (submitBtn) {
                 submitBtn.textContent = submitBtn.dataset.originalText || 'Entrar';
@@ -269,7 +333,7 @@ document.addEventListener('submit', async function (event) {
 
             await apiRequest(endpoint, { method: 'POST', body: data });
 
-            alert(`Cadastro de ${entity} efetuado com sucesso!`);
+            showSuccessToast(`Cadastro de ${entity} efetuado com sucesso!`);
             form.reset();
 
             const modal = form.closest('.modal-form');
@@ -280,7 +344,7 @@ document.addEventListener('submit', async function (event) {
                 }, 400);
             }
         } catch (error) {
-            alert(`Falha ao registrar dados.\n${error.message}`);
+            showErrorToast(`Falha ao registrar dados: ${error.message}`);
         } finally {
             if (submitBtn) {
                 submitBtn.textContent = submitBtn.dataset.originalText || 'Cadastrar';

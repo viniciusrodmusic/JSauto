@@ -13,6 +13,8 @@
 </head>
 
 <body>
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
 
     <header>
         <div class="header-logo">
@@ -50,14 +52,25 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="senha"><i class="bi bi-lock"></i> senha:</label>
-                        <input type="password" id="senha" name="password" required>
+                        <label for="senha"><i class="bi bi-lock"></i> Senha:</label>
+                        <div class="password-input-container">
+                            <input type="password" id="senha" name="password" required>
+                            <button type="button" id="toggle-password" class="password-toggle" title="Mostrar/Ocultar senha">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
 
                     <button type="submit">Entrar</button>
                     <a href="cadastro.html">Ainda não tem conta?</a>
 
+                    <div class="auth-refresh-container">
+                        <button type="button" id="refresh-auth-btn" class="refresh-btn" title="Renovar autenticação">
+                            <i class="bi bi-arrow-clockwise"></i> Renovar Auth
+                        </button>
+                        <span id="refresh-status" class="refresh-status"></span>
+                    </div>
 
                 </form>
 
@@ -67,7 +80,67 @@
 
     </main>
 
+    <script src="./src/scripts/toast.js"></script>
     <script src="./src/scripts/api.js"></script>
+    <script>
+        // Password Toggle Handler
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleBtn = document.getElementById('toggle-password');
+            const passwordInput = document.getElementById('senha');
+
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const isPassword = passwordInput.type === 'password';
+                    passwordInput.type = isPassword ? 'text' : 'password';
+                    
+                    const icon = toggleBtn.querySelector('i');
+                    icon.classList.toggle('bi-eye');
+                    icon.classList.toggle('bi-eye-slash');
+                });
+            }
+
+            // Refresh Auth Button Handler
+        document.addEventListener('DOMContentLoaded', function () {
+            const refreshBtn = document.getElementById('refresh-auth-btn');
+            const refreshStatus = document.getElementById('refresh-status');
+
+            if (!refreshBtn) return;
+
+            refreshBtn.addEventListener('click', async function (e) {
+                e.preventDefault();
+
+                // Se já está carregando, não faz nada
+                if (refreshBtn.classList.contains('loading')) return;
+
+                refreshBtn.classList.add('loading');
+                refreshStatus.textContent = 'Renovando autenticação...';
+                refreshStatus.className = 'refresh-status';
+
+                try {
+                    await refreshSession();
+                    
+                    refreshStatus.textContent = '✓ Autenticação renovada com sucesso!';
+                    refreshStatus.className = 'refresh-status success';
+                    
+                    // Limpar mensagem após 4 segundos
+                    setTimeout(() => {
+                        refreshStatus.textContent = '';
+                        refreshStatus.className = 'refresh-status';
+                    }, 4000);
+                } catch (error) {
+                    const errorMsg = error.message || 'Erro ao renovar autenticação';
+                    refreshStatus.textContent = '✗ ' + errorMsg;
+                    refreshStatus.className = 'refresh-status error';
+                    
+                    console.error('[Refresh Auth] Erro:', error);
+                } finally {
+                    refreshBtn.classList.remove('loading');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
