@@ -23,7 +23,9 @@ async function apiRequest(endpoint, options = {}) {
         const message = Array.isArray(errorData.message)
             ? errorData.message.join(', ')
             : (errorData.message || 'Ocorreu um erro ao comunicar-se com a API do servidor.');
-        throw new Error(message);
+        const error = new Error(message);
+        error.status = response.status;
+        throw error;
     }
 
     const text = await response.text();
@@ -37,8 +39,58 @@ async function login(email, password) {
     });
 }
 
+async function logout() {
+    try {
+        await apiRequest('/auth/logout', { method: 'POST' });
+    } catch (error) {
+        console.warn('[API] Erro ao encerrar sessão:', error.message);
+    }
+    window.location.href = 'index.html';
+}
+
+async function fetchProfile() {
+    return apiRequest('/auth/profile');
+}
+
 async function fetchUsers() {
     return apiRequest('/users');
+}
+
+function hideLoadingScreen() {
+    if (typeof hideLoading === 'function') {
+        hideLoading();
+    }
+}
+
+async function initManagementPage() {
+    if (!document.getElementById('logout-btn')) return;
+
+    try {
+        const profile = await fetchProfile();
+        const userLabel = document.getElementById('user-label');
+        if (userLabel && profile) {
+            const name = [profile.name, profile.lastname].filter(Boolean).join(' ');
+            userLabel.textContent = name || profile.email || '';
+        }
+    } catch (error) {
+        alert('Sessão expirada ou não autenticada. Faça login novamente.');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    hideLoadingScreen();
+}
+
+function handleUnauthorized(error) {
+    const isAuthError = error.status === 401 || error.status === 403;
+
+    if (isAuthError) {
+        alert('Sessão inválida. Faça login novamente.');
+        window.location.href = 'index.html';
+        return true;
+    }
+
+    return false;
 }
 
 const ENDPOINTS_MAP = {
@@ -113,6 +165,7 @@ async function showFuncionarios() {
         const users = await fetchUsers();
         renderFuncionariosList(users);
     } catch (error) {
+        if (handleUnauthorized(error)) return;
         listEl.innerHTML = `<p class="data-panel__error">Falha ao carregar funcionários.<br>${error.message}</p>`;
     }
 }
@@ -207,6 +260,11 @@ document.addEventListener('submit', async function (event) {
 });
 
 document.addEventListener('click', function (event) {
+    if (event.target.closest('#logout-btn')) {
+        logout();
+        return;
+    }
+
     const viewTarget = event.target.closest('[data-view-target]');
     if (viewTarget) {
         event.preventDefault();
@@ -223,3 +281,5 @@ document.addEventListener('click', function (event) {
         if (panel) panel.hidden = true;
     }
 });
+
+document.addEventListener('DOMContentLoaded', initManagementPage);
