@@ -467,3 +467,83 @@ nav ul li a:hover {
     margin-top: 6px;
     opacity: 0.8;
 }
+
+/* ========== Painel de Listagem ========== */
+.data-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    z-index: 5;
+    background-color: var(--color-secondary);
+    border-radius: 12px;
+    padding: 24px;
+    overflow: auto;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35);
+}
+
+.data-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.data-panel__header h2 {
+    font-size: 1.4rem;
+    color: var(--color-primary);
+}
+
+.data-panel__close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
+.data-panel__close:hover {
+    color: red;
+}
+
+.data-panel__content {
+    font-size: 1rem;
+}
+
+.data-panel__loading,
+.data-panel__empty,
+.data-panel__error {
+    font-size: 1.1rem;
+    color: var(--color-primary);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.data-panel__error {
+    color: #c0392b;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(66, 91, 108, 0.25);
+}
+
+.data-table th {
+    background-color: var(--color-primary);
+    color: var(--color-secondary);
+    font-weight: bold;
+}
+
+.data-table tbody tr:hover {
+    background-color: rgba(66, 91, 108, 0.08);
+}

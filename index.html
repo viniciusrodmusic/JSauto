@@ -40,22 +40,22 @@
 
             <div class="card-form">
 
-                <form action="#" method="post">
+                <form id="login-form" action="#" method="post">
 
                     <h2>Faça Login</h2>
 
                     <div class="form-group">
                         <label for="email"><i class="bi bi-person-circle"></i> Email:</label>
-                        <input type="text" id="email" name="email">
+                        <input type="email" id="email" name="email" required>
                     </div>
 
                     <div class="form-group">
                         <label for="senha"><i class="bi bi-lock"></i> senha:</label>
-                        <input type="password" id="senha" name="senha">
+                        <input type="password" id="senha" name="password" required>
                     </div>
 
 
-                    <button><a style="color: azure;" href="gerenciamento.html">Entrar</a></button>
+                    <button type="submit">Entrar</button>
                     <a href="cadastro.html">Ainda não tem conta?</a>
 
 
@@ -67,6 +67,7 @@
 
     </main>
 
+    <script src="./src/scripts/api.js"></script>
 </body>
 
 </html>

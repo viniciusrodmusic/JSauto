@@ -63,7 +63,7 @@
                         <i class="bi bi-chevron-down dropdown-icon"></i>
                     </a>
                     <ul id="ver" class="dropdown-menu">
-                        <li><a href="#">Ver Funcionários</a></li>
+                        <li><a href="#" data-view-target="funcionarios">Ver Funcionários</a></li>
                         <li><a href="#">Ver Clientes</a></li>
                         <li><a href="#">Ver Produtos</a></li>
                         <li><a href="#">Ver Veículos</a></li>
@@ -80,6 +80,14 @@
         </nav>
 
         <section id="management-zone">
+            <div id="panel-funcionarios" class="data-panel" hidden>
+                <div class="data-panel__header">
+                    <h2>Funcionários Cadastrados</h2>
+                    <button type="button" class="data-panel__close" data-panel-close>&times;</button>
+                </div>
+                <div id="funcionarios-list" class="data-panel__content"></div>
+            </div>
+
             <img src="./assets/carro.png" alt="">
 
             <!-- Modais de Cadastro -->
@@ -96,10 +104,10 @@
                         </div>
                         <div class="form-row">
                             <input type="email" name="email" placeholder="E-mail" required>
-                            <input type="text" name="phone" placeholder="Telefone">
+                            <input type="text" name="phone" placeholder="Telefone (somente números)" required maxlength="11">
                         </div>
                         <div class="form-row">
-                            <input type="text" name="cpf" placeholder="CPF" required>
+                            <input type="text" name="cpf" placeholder="CPF (somente números)" required maxlength="11">
                             <input type="password" name="password" placeholder="Senha" required>
                         </div>
 

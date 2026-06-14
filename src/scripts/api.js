@@ -1,105 +1,173 @@
-/**
- * Constante da URL base da API (Backend em Nest.js).
- * Esta URL deve ser alterada de acordo com o ambiente (desenvolvimento vs produção).
- */
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://auto-bots-api-production.up.railway.app';
 
 /**
- * Função genérica para enviar dados JSON a um endpoint da API de forma assíncrona.
- * 
- * @param {string} endpoint - O caminho para o recurso (ex: '/clientes').
- * @param {Object} data - Os dados estruturados (JSON) a serem enviados.
- * @param {string} method - O verbo HTTP a ser utilizado (POST, PUT, DELETE, etc.). Padrão: 'POST'.
- * @returns {Promise<Object>} Resposta resolvida da API em formato JSON.
+ * Requisição genérica à API com suporte a cookies HTTPOnly (credentials).
  */
-async function sendDataToApi(endpoint, data, method = 'POST') {
-    try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                // Se a API Nest.js utilizar JWT (AuthGuard), basta descomentar a linha abaixo
-                // e recuperar o token de onde estiver armazenado (ex: localStorage).
-                // 'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(data)
-        });
+async function apiRequest(endpoint, options = {}) {
+    const { method = 'GET', body } = options;
 
-        // O Nest.js tipicamente devolve status codes de erro estruturados.
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            // Lança um erro detalhado caso a API retorne sua própria string de erro (ex: class-validator).
-            throw new Error(errorData.message || 'Ocorreu um erro ao comunicar-se com a API do servidor.');
+    const config = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+    };
+
+    if (body !== undefined) {
+        config.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message = Array.isArray(errorData.message)
+            ? errorData.message.join(', ')
+            : (errorData.message || 'Ocorreu um erro ao comunicar-se com a API do servidor.');
+        throw new Error(message);
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+}
+
+async function login(email, password) {
+    return apiRequest('/auth/login', {
+        method: 'POST',
+        body: { email, password },
+    });
+}
+
+async function fetchUsers() {
+    return apiRequest('/users');
+}
+
+const ENDPOINTS_MAP = {
+    funcionario: '/users/register',
+    cliente: '/clientes',
+    produto: '/produtos',
+    veiculo: '/veiculos',
+};
+
+function buildNestedObject(formData) {
+    const result = {};
+    for (const [key, value] of formData.entries()) {
+        const match = key.match(/^([^\[]+)\[([^\]]+)\]$/);
+        if (match) {
+            const [, parent, child] = match;
+            if (!result[parent]) result[parent] = {};
+            result[parent][child] = value;
+        } else {
+            result[key] = value;
         }
+    }
+    return result;
+}
 
-        return await response.json();
+function renderFuncionariosList(users) {
+    const listEl = document.getElementById('funcionarios-list');
+    const panelEl = document.getElementById('panel-funcionarios');
+    if (!listEl || !panelEl) return;
+
+    if (!users || users.length === 0) {
+        listEl.innerHTML = '<p class="data-panel__empty">Nenhum funcionário cadastrado.</p>';
+    } else {
+        listEl.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Telefone</th>
+                        <th>Cidade</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map((user) => `
+                        <tr>
+                            <td>${user.name} ${user.lastname}</td>
+                            <td>${user.email}</td>
+                            <td>${user.phone || '—'}</td>
+                            <td>${user.address?.city || '—'}</td>
+                            <td>${user.address?.state || '—'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    document.querySelectorAll('.modal-form').forEach((m) => m.classList.remove('show'));
+    panelEl.hidden = false;
+}
+
+async function showFuncionarios() {
+    const listEl = document.getElementById('funcionarios-list');
+    const panelEl = document.getElementById('panel-funcionarios');
+    if (!listEl || !panelEl) return;
+
+    listEl.innerHTML = '<p class="data-panel__loading">Carregando funcionários...</p>';
+    panelEl.hidden = false;
+
+    try {
+        const users = await fetchUsers();
+        renderFuncionariosList(users);
     } catch (error) {
-        console.error(`[API Controller] Erro na requisição para ${endpoint}:`, error);
-        throw error;
+        listEl.innerHTML = `<p class="data-panel__error">Falha ao carregar funcionários.<br>${error.message}</p>`;
     }
 }
 
-/**
- * Mapeamento das entidades (forms) para seus respectivos endpoints no backend.
- * O nome da propriedade deve bater com o 'data-entity' no form HTML.
- */
-const ENDPOINTS_MAP = {
-    'funcionario': '/funcionarios',
-    'cliente': '/clientes',
-    'produto': '/produtos',
-    'veiculo': '/veiculos'
-};
-
-/**
- * Listener global para interceptar todos os formulários da página
- * que possuam o atributo mapeador 'data-entity'.
- */
-document.addEventListener('submit', async function(event) {
+document.addEventListener('submit', async function (event) {
     const form = event.target;
-    
-    // Verifica se o formulário interceptado foi um dos modais previstos
+
+    if (form.matches('#login-form')) {
+        event.preventDefault();
+
+        const email = form.querySelector('#email').value.trim();
+        const password = form.querySelector('#senha').value;
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        if (!email || !password) {
+            alert('Preencha e-mail e senha.');
+            return;
+        }
+
+        try {
+            if (submitBtn) {
+                submitBtn.dataset.originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Entrando...';
+                submitBtn.disabled = true;
+            }
+
+            await login(email, password);
+            window.location.href = 'gerenciamento.html';
+        } catch (error) {
+            alert(`Falha no login.\n${error.message}`);
+        } finally {
+            if (submitBtn) {
+                submitBtn.textContent = submitBtn.dataset.originalText || 'Entrar';
+                submitBtn.disabled = false;
+            }
+        }
+        return;
+    }
+
     if (form.matches('form[data-entity]')) {
-        event.preventDefault(); // Impede o reload indesejado de página do padrão submit HTML
+        event.preventDefault();
 
         const entity = form.getAttribute('data-entity');
         const endpoint = ENDPOINTS_MAP[entity];
-        
+
         if (!endpoint) {
             console.error(`Endpoint não cadastrado no mapa para a entidade: ${entity}`);
             return;
         }
 
-        // Utilização de FormData para varrer todos os campos <input name="..."> de maneira inteligente
         const formData = new FormData(form);
-
-        /**
-         * Converte campos com notação de colchetes (ex: address[street])
-         * em objetos aninhados para compatibilidade com o DTO do NestJS.
-         */
-        function buildNestedObject(formData) {
-            const result = {};
-            for (const [key, value] of formData.entries()) {
-                const match = key.match(/^([^\[]+)\[([^\]]+)\]$/);
-                if (match) {
-                    const [, parent, child] = match;
-                    if (!result[parent]) result[parent] = {};
-                    result[parent][child] = value;
-                } else {
-                    result[key] = value;
-                }
-            }
-            return result;
-        }
-
         const data = buildNestedObject(formData);
 
-        // Processamentos opcionais: Converter IDs ou Preços para numéricos se o NestJS exigir rigidez
-        if (data.year) {
-            data.year = parseInt(data.year, 10);
-        }
-        if (data.price) {
-            data.price = parseFloat(data.price);
-        }
+        if (data.year) data.year = parseInt(data.year, 10);
+        if (data.price) data.price = parseFloat(data.price);
         if (data.stock) {
             if (data.stock.quantity !== undefined) data.stock.quantity = parseInt(data.stock.quantity, 10);
             if (data.stock.minStock !== undefined) data.stock.minStock = parseInt(data.stock.minStock, 10);
@@ -109,39 +177,49 @@ document.addEventListener('submit', async function(event) {
         const submitBtn = form.querySelector('button[type="submit"]');
 
         try {
-            // Loading state (melhoria de UX) e prevenção de múltiplos envios (Spam)
             if (submitBtn) {
                 submitBtn.dataset.originalText = submitBtn.textContent;
                 submitBtn.textContent = 'Enviando...';
                 submitBtn.disabled = true;
             }
 
-            // Aguarda a resposta do Nest.js
-            const result = await sendDataToApi(endpoint, data);
+            await apiRequest(endpoint, { method: 'POST', body: data });
 
             alert(`Cadastro de ${entity} efetuado com sucesso!`);
-            
-            form.reset(); // Limpa os dados do formulário preenchido
+            form.reset();
 
-            // Fecha o modal atual com transição suave
             const modal = form.closest('.modal-form');
             if (modal) {
                 modal.classList.remove('show');
-                // Aguarda animação terminar
                 setTimeout(() => {
                     modal.style.display = 'none';
                 }, 400);
             }
-
         } catch (error) {
-            // Falha
-            alert(`Falha ao registrar dados. \n${error.message}`);
+            alert(`Falha ao registrar dados.\n${error.message}`);
         } finally {
-            // Sempre desfaz o estado de loading do botão
             if (submitBtn) {
                 submitBtn.textContent = submitBtn.dataset.originalText || 'Cadastrar';
                 submitBtn.disabled = false;
             }
         }
+    }
+});
+
+document.addEventListener('click', function (event) {
+    const viewTarget = event.target.closest('[data-view-target]');
+    if (viewTarget) {
+        event.preventDefault();
+        const view = viewTarget.getAttribute('data-view-target');
+        if (view === 'funcionarios') {
+            showFuncionarios();
+        }
+        return;
+    }
+
+    const closePanel = event.target.closest('[data-panel-close]');
+    if (closePanel) {
+        const panel = document.getElementById('panel-funcionarios');
+        if (panel) panel.hidden = true;
     }
 });
