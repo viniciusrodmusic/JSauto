@@ -1,4 +1,7 @@
 const API_BASE_URL = 'https://auto-bots-api-production.up.railway.app';
+const AUTH_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+
+let authRefreshTimerId = null;
 
 /**
  * Requisição genérica à API com suporte a cookies HTTPOnly (credentials).
@@ -40,6 +43,7 @@ async function login(email, password) {
 }
 
 async function logout() {
+    stopAuthRefreshInterval();
     try {
         await apiRequest('/auth/logout', { method: 'POST' });
     } catch (error) {
@@ -50,6 +54,32 @@ async function logout() {
 
 async function fetchProfile() {
     return apiRequest('/auth/profile');
+}
+
+async function refreshSession() {
+    return apiRequest('/auth/refresh', { method: 'POST' });
+}
+
+function stopAuthRefreshInterval() {
+    if (authRefreshTimerId !== null) {
+        clearInterval(authRefreshTimerId);
+        authRefreshTimerId = null;
+    }
+}
+
+function startAuthRefreshInterval() {
+    stopAuthRefreshInterval();
+
+    authRefreshTimerId = setInterval(async () => {
+        try {
+            await refreshSession();
+        } catch (error) {
+            console.warn('[API] Falha ao renovar sessão:', error.message);
+            if (handleUnauthorized(error)) {
+                stopAuthRefreshInterval();
+            }
+        }
+    }, AUTH_REFRESH_INTERVAL_MS);
 }
 
 async function fetchUsers() {
@@ -79,6 +109,7 @@ async function initManagementPage() {
     }
 
     hideLoadingScreen();
+    startAuthRefreshInterval();
 }
 
 function handleUnauthorized(error) {
@@ -283,3 +314,16 @@ document.addEventListener('click', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', initManagementPage);
+
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible' || !document.getElementById('logout-btn')) return;
+
+    refreshSession().catch(function (error) {
+        console.warn('[API] Falha ao renovar sessão ao retornar à aba:', error.message);
+        if (handleUnauthorized(error)) {
+            stopAuthRefreshInterval();
+        }
+    });
+});
+
+window.addEventListener('beforeunload', stopAuthRefreshInterval);
